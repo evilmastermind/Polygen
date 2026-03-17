@@ -1,0 +1,29 @@
+{
+  "name": "polygen",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Browser-compatible TypeScript rewrite of Polygen.",
+  "license": "SEE LICENSE IN ../../License",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts",
+    "lint": "eslint src test --ext .ts",
+    "test": "vitest run",
+    "typecheck": "tsc --project tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "4.1.0",
+    "tsup": "8.5.1"
+  }
+}

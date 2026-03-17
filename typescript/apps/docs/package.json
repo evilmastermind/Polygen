@@ -1,0 +1,23 @@
+{
+  "name": "@polygen/docs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "lint": "eslint . --ext .ts,.js,.mjs",
+    "prebuild": "nuxt prepare",
+    "prepare": "nuxt prepare",
+    "pretypecheck": "nuxt prepare",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "nuxt typecheck"
+  },
+  "dependencies": {
+    "@nuxt/content": "3.12.0",
+    "better-sqlite3": "12.8.0",
+    "nuxt": "4.4.2"
+  },
+  "devDependencies": {
+    "vue-tsc": "3.2.5"
+  }
+}
