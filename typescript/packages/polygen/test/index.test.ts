@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
+import { readFixture } from "./fixtures";
+
 import {
   compileGrammar,
+  compileGrammarWithInfo,
   createSegmentGrammar,
   CompileError,
   generateCompiled,
@@ -23,8 +26,10 @@ describe("polygen", () => {
   });
 
   it("supports the segment convenience API", () => {
-    expect(polygenSegment('"Valuables" | "Furniture"', { seed: 7 })).toMatch(
-      /^(Valuables|Furniture)$/
+    const segment = readFixture("segment-ungrouped.txt").trim();
+
+    expect(polygenSegment(segment, { seed: 7 })).toMatch(
+      /^(adventuringgear|valuables|furniture)$/
     );
   });
 
@@ -38,15 +43,15 @@ describe("polygen", () => {
   });
 
   it("wraps an ungrouped segment into a temporary grammar", () => {
-    expect(createSegmentGrammar("Adventuringgear | Valuables | Tools")).toBe(
-      "S ::= (Adventuringgear | Valuables | Tools);"
-    );
+    expect(
+      createSegmentGrammar(readFixture("segment-ungrouped.txt").trim())
+    ).toBe("S ::= (adventuringgear | valuables | furniture);");
   });
 
   it("accepts a grouped segment without double-wrapping it", () => {
-    expect(createSegmentGrammar("(Adventuringgear | Valuables | Tools)")).toBe(
-      "S ::= (Adventuringgear | Valuables | Tools);"
-    );
+    expect(
+      createSegmentGrammar(readFixture("segment-grouped.txt").trim())
+    ).toBe("S ::= (adventuringgear | valuables | furniture);");
   });
 
   it("preserves multilingual content in the wrapped grammar", () => {
@@ -68,6 +73,7 @@ describe("polygen", () => {
     expect(result.resolvedSeed).toBeGreaterThanOrEqual(0);
     expect(result.resolvedSeed).toBeLessThan(0x1_0000_0000);
     expect(["foo", "bar", "baz"]).toContain(result.text);
+    expect(result.warnings).toEqual([]);
   });
 
   it("can replay an unseeded run through the resolved seed", () => {
@@ -97,19 +103,38 @@ describe("polygen", () => {
   });
 
   it("supports explicit label selection", () => {
-    expect(
-      ["Good day", "Hi"].includes(
-        polygen(
-          'S ::= Greeting.formal; Greeting ::= formal: "Good day" | "Hi";'
-        )
-      )
-    ).toBe(true);
+    const grammar = readFixture("labels-selection.grm");
+
+    expect(["Good day", "Hi"].includes(polygen(grammar))).toBe(true);
   });
 
   it("throws for malformed explicit label selection", () => {
     expect(() =>
       polygen('S ::= Greeting.missing; Greeting ::= formal: "Good day" | "Hi";')
     ).toThrow(CompileError);
+  });
+
+  it("surfaces a warning when unfolding an assignment-bound symbol", () => {
+    const result = polygenWithInfo("S ::= >X; X := one | two;", { seed: 1 });
+
+    expect(["one", "two"]).toContain(result.text);
+    expect(result.warnings).toEqual([
+      expect.objectContaining({
+        code: "unfold-assign",
+        severity: "warning"
+      })
+    ]);
+  });
+
+  it("surfaces a warning when unfolding a single-alternative group", () => {
+    const result = compileGrammarWithInfo(parseGrammar('S ::= >("hello");'));
+
+    expect(result.warnings).toEqual([
+      expect.objectContaining({
+        code: "useless-unfold",
+        severity: "warning"
+      })
+    ]);
   });
 
   it("supports compile and generate as separate steps", () => {
@@ -144,6 +169,19 @@ describe("polygen", () => {
     ).toThrow(GenerationError);
   });
 
+  it("generates from the legacy English smoke fixture", () => {
+    const grammar = readFixture("legacy-en-test.grm");
+    const output = polygen(grammar, { seed: 9 });
+
+    expect(output.length).toBeGreaterThan(0);
+  });
+
+  it("supports the legacy unfold fixture from src/test.grm", () => {
+    const grammar = readFixture("legacy-src-test.grm");
+
+    expect(polygen(grammar, { seed: 0 })).toBe("ciao y ciao x");
+  });
+
   it("parses a simple grammar", () => {
     const grammar = parseGrammar('S ::= "hello" | Name; Name ::= "world";');
 
@@ -153,14 +191,14 @@ describe("polygen", () => {
   });
 
   it("parses unicode terminals without sanitation", () => {
-    const grammar = parseGrammar('S ::= niño | 東京 | "crème brûlée";');
+    const grammar = parseGrammar(readFixture("multilingual.grm"));
     const declaration = grammar.declarations[0];
 
     expect(declaration?.type).toBe("bind");
     if (declaration?.type !== "bind") {
       throw new Error("Expected a bind declaration.");
     }
-    expect(declaration.production.alternatives).toHaveLength(3);
+    expect(declaration.production.alternatives).toHaveLength(1);
   });
 
   it("parses standalone segments", () => {
@@ -214,9 +252,9 @@ describe("polygen", () => {
   });
 
   it("allows nested scopes to shadow outer declarations", () => {
-    expect(
-      polygen('S ::= (S ::= "inner"; >S) | "outer";', { seed: 0 })
-    ).toBe("inner");
+    expect(polygen('S ::= (S ::= "inner"; >S) | "outer";', { seed: 0 })).toBe(
+      "inner"
+    );
   });
 
   it("throws for missing start symbols during generation", () => {
@@ -239,14 +277,27 @@ describe("polygen", () => {
   });
 
   it("parses and generates multiline grammars without normalization", () => {
-    const output = polygen(
-      'S ::= Greeting;\nGreeting ::= "ciao" |\n  "hola";',
-      {
-        seed: 3
-      }
-    );
+    const output = polygen(readFixture("multiline.grm"), {
+      seed: 3
+    });
 
-    expect(["ciao", "hola"]).toContain(output);
+    expect(["ciao", "hola", "bonjour"]).toContain(output);
+  });
+
+  it("generates from a multilingual fixture without input sanitation", () => {
+    const output = polygen(readFixture("multilingual.grm"), { seed: 2 });
+
+    expect([
+      "Olá mundo",
+      "Olá façade",
+      "Olá 東京",
+      "crème brûlée mundo",
+      "crème brûlée façade",
+      "crème brûlée 東京",
+      "niño mundo",
+      "niño façade",
+      "niño 東京"
+    ]).toContain(output);
   });
 
   it("tokenizes multiline grammars without newline flattening", () => {
@@ -289,7 +340,7 @@ describe("polygen", () => {
   });
 
   it("supports legacy quote escapes including octal escapes", () => {
-    const tokens = tokenize('S ::= "line\\nA\\065";');
+    const tokens = tokenize(readFixture("string-escapes.grm"));
     const quoteToken = tokens.find((token) => token.kind === "quote");
 
     expect(quoteToken?.value).toBe("line\nAA");

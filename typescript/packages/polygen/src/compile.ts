@@ -31,6 +31,24 @@ type Placement = {
 
 type SourceEnv = Map<string, BindDeclaration>;
 
+export type CompileWarningCode = "unfold-assign" | "useless-unfold";
+
+export interface CompileWarning {
+  code: CompileWarningCode;
+  message: string;
+  range: SourceRange;
+  severity: "warning";
+}
+
+export interface CompileResult {
+  compiled: CompiledGrammar;
+  warnings: CompileWarning[];
+}
+
+interface CompileContext {
+  warnings: CompileWarning[];
+}
+
 export class CompileError extends Error {
   readonly range: SourceRange;
 
@@ -42,22 +60,35 @@ export class CompileError extends Error {
 }
 
 export function compileGrammar(grammar: Grammar): CompiledGrammar {
-  validateGrammar(grammar);
+  return compileGrammarWithInfo(grammar).compiled;
+}
+
+export function compileGrammarWithInfo(grammar: Grammar): CompileResult {
+  const context = createCompileContext();
+  validateGrammar(grammar, context);
   const env = extendSourceEnv(new Map(), grammar.declarations);
 
   return {
-    declarations: compileDeclarations(grammar.declarations, env),
-    range: grammar.range,
-    type: "compiled-grammar"
+    compiled: {
+      declarations: compileDeclarations(grammar.declarations, env),
+      range: grammar.range,
+      type: "compiled-grammar"
+    },
+    warnings: context.warnings
   };
 }
 
-function validateGrammar(grammar: Grammar): void {
+function createCompileContext(): CompileContext {
+  return { warnings: [] };
+}
+
+function validateGrammar(grammar: Grammar, context: CompileContext): void {
   validateDeclarationScope(grammar.declarations);
   validateUnfoldingDeclarations(
     grammar.declarations,
     extendSourceEnv(new Map(), grammar.declarations),
-    []
+    [],
+    context
   );
 }
 
@@ -83,26 +114,33 @@ function validateDeclarationScope(declarations: Declaration[]): void {
 function validateUnfoldingDeclarations(
   declarations: Declaration[],
   env: SourceEnv,
-  unfoldingPath: string[]
+  unfoldingPath: string[],
+  context: CompileContext
 ): void {
   for (const declaration of declarations) {
     if (declaration.type !== "bind") {
       continue;
     }
 
-    validateProductionUnfolding(declaration.production, env, unfoldingPath);
+    validateProductionUnfolding(
+      declaration.production,
+      env,
+      unfoldingPath,
+      context
+    );
   }
 }
 
 function validateProductionUnfolding(
   production: Production,
   env: SourceEnv,
-  unfoldingPath: string[]
+  unfoldingPath: string[],
+  context: CompileContext
 ): void {
   for (const sequence of production.alternatives) {
     for (const position of sequence.positions) {
       for (const atom of position) {
-        validateAtomUnfolding(atom, env, unfoldingPath);
+        validateAtomUnfolding(atom, env, unfoldingPath, context);
       }
     }
   }
@@ -111,7 +149,8 @@ function validateProductionUnfolding(
 function validateAtomUnfolding(
   atom: Atom,
   env: SourceEnv,
-  unfoldingPath: string[]
+  unfoldingPath: string[],
+  context: CompileContext
 ): void {
   switch (atom.type) {
     case "terminal":
@@ -120,21 +159,21 @@ function validateAtomUnfolding(
 
     case "select":
     case "multiselect":
-      validateAtomUnfolding(atom.target, env, unfoldingPath);
+      validateAtomUnfolding(atom.target, env, unfoldingPath, context);
       return;
 
     case "lock":
       if (atom.target.type === "group") {
-        validateGroupUnfolding(atom.target, env, unfoldingPath);
+        validateGroupUnfolding(atom.target, env, unfoldingPath, context);
       }
       return;
 
     case "group":
-      validateGroupUnfolding(atom, env, unfoldingPath);
+      validateGroupUnfolding(atom, env, unfoldingPath, context);
       return;
 
     case "unfold":
-      validateUnfoldTarget(atom, env, unfoldingPath);
+      validateUnfoldTarget(atom, env, unfoldingPath, context);
       return;
   }
 }
@@ -142,25 +181,47 @@ function validateAtomUnfolding(
 function validateGroupUnfolding(
   group: GroupAtom,
   env: SourceEnv,
-  unfoldingPath: string[]
+  unfoldingPath: string[],
+  context: CompileContext
 ): void {
   validateDeclarationScope(group.declarations);
   const localEnv = extendSourceEnv(env, group.declarations);
-  validateUnfoldingDeclarations(group.declarations, localEnv, unfoldingPath);
-  validateProductionUnfolding(group.production, localEnv, unfoldingPath);
+  validateUnfoldingDeclarations(
+    group.declarations,
+    localEnv,
+    unfoldingPath,
+    context
+  );
+  validateProductionUnfolding(
+    group.production,
+    localEnv,
+    unfoldingPath,
+    context
+  );
 }
 
 function validateUnfoldTarget(
   atom: UnfoldAtom,
   env: SourceEnv,
-  unfoldingPath: string[]
+  unfoldingPath: string[],
+  context: CompileContext
 ): void {
   if (atom.target.type === "group") {
-    validateGroupUnfolding(atom.target, env, unfoldingPath);
+    if (atom.target.production.alternatives.length === 1) {
+      addCompileWarning(
+        context,
+        "useless-unfold",
+        "Unfolding a group with a single alternative is unnecessary.",
+        atom.range
+      );
+    }
+
+    validateGroupUnfolding(atom.target, env, unfoldingPath, context);
     return;
   }
 
-  const symbol = atom.target.path.segments[atom.target.path.segments.length - 1];
+  const symbol =
+    atom.target.path.segments[atom.target.path.segments.length - 1];
 
   if (symbol === undefined) {
     return;
@@ -179,10 +240,35 @@ function validateUnfoldTarget(
     return;
   }
 
-  validateProductionUnfolding(declaration.production, env, [
-    ...unfoldingPath,
-    symbol
-  ]);
+  if (declaration.mode === "assign") {
+    addCompileWarning(
+      context,
+      "unfold-assign",
+      `Unfolding assignment-bound symbol '${symbol}' uses a memoized binding.`,
+      atom.range
+    );
+  }
+
+  validateProductionUnfolding(
+    declaration.production,
+    env,
+    [...unfoldingPath, symbol],
+    context
+  );
+}
+
+function addCompileWarning(
+  context: CompileContext,
+  code: CompileWarningCode,
+  message: string,
+  range: SourceRange
+): void {
+  context.warnings.push({
+    code,
+    message,
+    range,
+    severity: "warning"
+  });
 }
 
 function compileDeclarations(

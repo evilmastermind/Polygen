@@ -1,0 +1,5 @@
+S ::= Greeting.formal;
+
+Greeting ::= formal: "Good day"
+           | casual: "Hi"
+           | "Hello";

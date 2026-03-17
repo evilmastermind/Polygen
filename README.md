@@ -1,117 +1,143 @@
 # Polygen
 
-https://github.com/alvisespano/Polygen
+Polygen is a browser-compatible TypeScript rewrite of the original Polygen grammar generator.
 
-Polygen — a first effort towards satyre in computer science.
+This rewrite and its accompanying documentation are being actively developed with AI assistance.
 
+This repository now contains two parallel tracks:
 
+- the original OCaml implementation and historical project files in the repository root
+- the new TypeScript workspace in `typescript/`, focused on an npm package and a modern docs site
 
+## Credit To The Original Project
 
------
+This rewrite builds on the original Polygen project created by Alvise Spano and the original contributors.
 
-**Table of Contents**
+- Original website: <https://polygen.org>
+- Original repository: <https://github.com/alvisespano/Polygen>
 
-<!-- MarkdownTOC autolink="true" bracket="round" autoanchor="false" lowercase="true" lowercase_only_ascii="true" uri_encoding="true" depth="3" -->
+## Repository Layout
 
-- [1.0 Prelude](#10-prelude)
-- [1.1 Package](#11-package)
-    - [1.1.1 Requirements](#111-requirements)
-    - [1.1.2 Supported platforms](#112-supported-platforms)
-    - [1.1.3 Installation](#113-installation)
-        - [1.1.3.1 Windows Precompiled Binaries](#1131-windows-precompiled-binaries)
-- [1.2 Usage](#12-usage)
-    - [1.2.1 Defining grammars](#121-defining-grammars)
-    - [1.2.2 Suggestions](#122-suggestions)
+```text
+.
+├── src/                  # original OCaml implementation
+├── docs/                 # original HTML specification and historical docs
+├── grammars/             # historical grammar collection
+└── typescript/
+    ├── apps/docs         # Nuxt 4 + Nuxt Content documentation site
+    └── packages/polygen  # browser-safe TypeScript library package
+```
 
-<!-- /MarkdownTOC -->
+## Current Direction
 
------
+The active rewrite work is in `typescript/`.
 
-__SUBMODULE NOTE__ — This project contains a submodule (`grammars` folder); don't forget to initialize it (once) after cloning:
+Current scope:
 
-    git submodule update --init --recursive
+- publish a `polygen` npm package for browsers and modern Node ESM
+- keep the grammar-driven Polygen workflow intact
+- preserve deterministic seeding when requested
+- default to entropy-backed randomness when no seed is provided
+- expose resolved seeds so unseeded runs can be replayed later
+- provide a docs site in English using Nuxt 4 and Nuxt Content
 
-Also, to keep the submodule always up to date with the latest changes, don't forget to use:
+Intentionally not in first-release scope:
 
-    git submodule update 
+- legacy CLI compatibility
+- import support
+- the full warning-model parity from the OCaml checker
 
-For more information on Git submodules, see:
+## TypeScript Workspace
 
-- [Pro Git book]
-- [Learn Version Control with Git]
+The TypeScript rewrite uses a pnpm workspace rooted in `typescript/`.
 
-[Pro Git book]: https://git-scm.com/book/en/v2/Git-Tools-Submodules "Pro Git: 7.11 Git Tools - Submodules"
-[Learn Version Control with Git]: https://www.git-tower.com/learn/git/ebook/en/command-line/advanced-topics/submodules#start "Learn Version Control with Git: Submodules"
+Requirements:
 
-# 1.0 Prelude
+- Node 24+
+- pnpm 10+
 
-Polygen is a command line program for generating random sentences according to a grammar definition, that is following custom syntactical and lexical rules. It takes a text file as source program defining a grammar by means of BNF-like rules and executes it, eventually showing the result.
+Install workspace dependencies:
 
-Here a source program is a grammar definition, the execution consists in the exploration of such grammar by selecting a random path and the result is the sentence built on the way.
+```bash
+cd typescript
+pnpm install
+```
 
-![PolyGUIScreenshot][PolyGUI screenshot]
+Common commands:
 
-# 1.1 Package
+```bash
+pnpm build
+pnpm test
+pnpm typecheck
+pnpm lint
+pnpm dev:docs
+pnpm smoke:consumer
+pnpm smoke:browser
+```
 
-## 1.1.1 Requirements
+Verification notes:
 
-Polygen is fairly slim and does not need that powerful computer in order to work.
+- `pnpm smoke:consumer` packs `polygen`, installs it into a temporary external project, and exercises the published API.
+- `pnpm smoke:browser` packs `polygen`, installs it into a temporary external project, bundles that installed package for `platform=browser`, and executes the resulting bundle.
 
-From a theoretical point of view, there could be unlucky cases making the program loop for a sensible amount of time over a certain recursive production; in the real world, though, it will never happen.
+## Package Quick Start
 
-Everything you need is a shell or command line interpreter (such as Bash or Csh under UNIX/Linux or the DOS Command Prompt under Windows) and, only in case you wish to write/view a grammar source file, a plain text editor/viewer.
+```ts
+import { polygen, polygenWithInfo } from "polygen";
 
+const grammar =
+  'S ::= Greeting Target; Greeting ::= "Hello" | "Welcome"; Target ::= traveler | world;';
 
-## 1.1.2 Supported platforms
+const text = polygen(grammar);
+const replayable = polygenWithInfo(grammar);
+```
 
-Polygen packages come in a variety of flavours, some providing different executable files in a platform-dependent way. Be sure the one you downloaded suits your machine and operating system.
+Segment helper:
 
-A package containing the full source code exists as well and is intended for either people who just wish to know how Polygen works or users whose platform is not directly supported by a package containing an executable file for their machine. The latter will be able to compile the program by themselves following the instructions in the README file located in the source directory.
+```ts
+import { polygenSegment } from "polygen";
 
+const text = polygenSegment("alpha | beta | gamma");
+```
 
-## 1.1.3 Installation
+## Documentation
 
-Polygen needs no installation: it just consists of an executable file and a bunch of grammar sources.
+The rewritten docs live in `typescript/apps/docs`.
 
-Leave it as is in an own directory and '`cd`' there when you want to use it.
+Current coverage includes:
 
-Refer to platform-dependant `README` file for additional hints.
+- quick start
+- API reference
+- grammar basics
+- operators
+- labels and scoping
+- parity status and deferred features
+- randomness and replayability
+- troubleshooting
+- example-driven pages based on real legacy fixtures
 
-### 1.1.3.1 Windows Precompiled Binaries
+## Current Compatibility Boundary
 
-In the root of this project you'll find a Zip archive containing the precompiled binaries of Polygen and PolyGUI, along with the correct version of `cygwin1.dll` required for running Polygen under Windows 10:
+Implemented and verified today:
 
-- [`Polygen1.6.0-PolyGUI_Win10.zip`][Polygen Win Zip] (direct download link)
+- browser-safe ESM package output
+- packaged consumer install smoke test
+- packaged browser-bundle smoke test
+- grammar parsing and generation for labels, groups, unfold and lock syntax, recursion guards, multiline grammars, and multilingual content
 
-Just unpack its contents and you're ready to use it.
+Still intentionally deferred:
 
-# 1.2 Usage
+- legacy CLI compatibility
+- import declarations
+- the full OCaml warning model parity and warning-reporting surface
+- exact parity classification for every historical grammar feature
 
-The executable file must be launched from a shell or command line interpreter, as stated in section 1.1.2. It takes a set of arguments and prints to standard output, which is the shell terminal itself by default. For the formal synopsis run the executable with no arguments.
+## Legacy Materials
 
+The repository root still contains the original sources and historical assets.
 
-## 1.2.1 Defining grammars
+- `src/` contains the OCaml implementation
+- `docs/polygen-spec_EN.html` and `docs/polygen-spec_IT.html` contain the historical language specification
+- `grammars/` contains the historical grammar collection
 
-For a detailed guide on Polygen Meta Language (PML), the grammar definition language interpreted by Polygen, see the documentation included in the [`/docs/`][docs] folder:
-
-- [`polygen-spec_EN.html`][PML en] — English ([HTML Preview][PML en HTML Preview])
-- [`polygen-spec_IT.html`][PML it] — Italian ([HTML Preview][PML it HTML Preview])
-
-## 1.2.2 Suggestions
-
-- Remember to provide an "`I`" non-terminal symbol in your own grammar files for the `-info` option.
-- Try to avoid as many warnings as possible when developing your own grammar sources: your definitions will be more robust and won't lead to unexpected outputs.
-
-
-
-[Polygen Win Zip]: https://github.com/alvisespano/Polygen/raw/master/Polygen1.6.0-PolyGUI_Win10.zip "Download Polygen for Windows and PolyGUI precompiled binaries"
-
-[PolyGUI screenshot]: https://raw.githubusercontent.com/wiki/tajmone/Polygen/screenshot_PolyGUI.png "Screenshot of PolyGUI tool for creating and testing Polygen grammars"
-
-[docs]: ./docs "View the contents of the 'docs' folder"
-
-[PML en]: ./docs/polygen-spec_EN.html "Polygen Meta Language Spec' (English)"
-[PML it]: ./docs/polygen-spec_IT.html "Polygen Meta Language Spec' (Italian)"
-
-[PML en HTML Preview]: http://htmlpreview.github.io/?https://github.com/tajmone/polygen-docs/blob/master/polygen-spec_EN.html "Live HTML preview of latest release of 'Polygen Meta Language Spec' (English)"
-[PML it HTML Preview]: http://htmlpreview.github.io/?https://github.com/tajmone/polygen-docs/blob/master/polygen-spec_IT.html "Live HTML preview of latest release of 'Polygen Meta Language Spec' (Italian)"
+Those files remain important reference material for parity work, but the ongoing npm-focused implementation lives in `typescript/`.

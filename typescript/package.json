@@ -12,12 +12,15 @@
     "format:check": "prettier --check .",
     "lint": "pnpm -r lint",
     "prepare": "pnpm --filter @polygen/docs prepare",
+    "smoke:browser": "node ./scripts/browser-smoke.mjs",
+    "smoke:consumer": "node ./scripts/consumer-smoke.mjs",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "@types/node": "25.5.0",
+    "esbuild": "0.25.10",
     "eslint": "10.0.3",
     "prettier": "3.8.1",
     "typescript": "5.9.3",

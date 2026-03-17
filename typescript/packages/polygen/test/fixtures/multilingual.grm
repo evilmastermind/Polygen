@@ -1,0 +1,9 @@
+S ::= Greeting Target;
+
+Greeting ::= "Olá"
+           | "crème brûlée"
+           | niño;
+
+Target ::= mundo
+         | façade
+         | 東京;

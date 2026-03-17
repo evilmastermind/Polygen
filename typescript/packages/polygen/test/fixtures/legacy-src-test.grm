@@ -1,0 +1,9 @@
+I ::= test ;
+
+S ::= (X ::= y; >Fx) (X ::= x; >Fx)
+;
+
+Fx ::= ciao >X
+;
+
+X ::= dummy ;

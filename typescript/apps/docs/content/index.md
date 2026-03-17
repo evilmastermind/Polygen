@@ -1,10 +1,37 @@
 ---
 title: Polygen Docs
-description: TypeScript rewrite documentation scaffold.
+description: Browser-compatible TypeScript rewrite of the Polygen grammar generator.
 ---
 
 # Polygen
 
-The Nuxt Content documentation scaffold is in place.
+Polygen is a browser-compatible TypeScript rewrite of the original OCaml random sentence generator. It keeps the grammar-driven workflow, keeps deterministic seeds when you want them, and defaults to entropy-backed randomness when you do not.
 
-The next step is to replace this placeholder with the actual English rewrite of the Polygen documentation.
+## What This Rewrite Is For
+
+- Import a generator into any modern ESM project.
+- Generate sentences in browsers and modern Node without the legacy CLI.
+- Preserve the recognizable Polygen grammar style while making the API more explicit.
+- Keep runs reproducible when you provide a seed.
+- Make unseeded runs replayable by returning the resolved seed.
+
+## Current Release Scope
+
+The first release is library-first.
+
+- Top-level helpers: `polygen`, `polygenWithInfo`, `polygenSegment`, `polygenSegmentWithInfo`
+- Lower-level helpers: `parseGrammar`, `compileGrammar`, `generateCompiled`, `tokenize`
+- Supported behavior: labels, grouped productions, optional groups, mobile groups, unfold and lock syntax, seeded and unseeded generation, recursion safeguards, Unicode grammar content
+- Not yet covered: legacy CLI compatibility, imports, and the full warning-model parity from the OCaml checker
+
+## Read Next
+
+- [Quick Start](/quick-start)
+- [API Reference](/api)
+- [Grammar Basics](/grammar-basics)
+- [Operators](/operators)
+- [Labels and Scoping](/labels-scoping)
+- [Examples](/examples)
+- [Status and Compatibility](/status-compatibility)
+- [Randomness](/randomness)
+- [Troubleshooting](/troubleshooting)

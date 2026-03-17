@@ -18,6 +18,8 @@ This checklist is the operational source of truth for the rewrite. Keep it updat
 - Seeded generation must remain reproducible.
 - Do not require callers to strip newlines, accents, or non-ASCII characters from valid grammars.
 - Keep docs examples aligned with the real package implementation.
+- Give visible credit in every main documentation page or README to the original creators, including links to polygen.org and github.com/alvisespano/Polygen.
+- Clearly indicate in main documentation pages and readmes that the rewrite is being developed with AI assistance.
 - Expand the next major task into smaller tasks as soon as enough context exists.
 
 ## Current Decisions
@@ -45,7 +47,7 @@ This checklist is the operational source of truth for the rewrite. Keep it updat
 - [x] Create `typescript/packages/polygen`.
 - [x] Create `typescript/apps/docs`.
 - [x] Ensure workspace scripts can run lint, format, type-check, test, build, and docs tasks.
-- [ ] Update the root README to explain the isolated TypeScript workspace layout and rewrite scope.
+- [x] Update the root README to explain the isolated TypeScript workspace layout and rewrite scope.
 
 ## Phase 2: Legacy Inventory and Parity Contract
 
@@ -54,29 +56,29 @@ This checklist is the operational source of truth for the rewrite. Keep it updat
 - [x] Inventory grammar rules from `src/parser.mly`.
 - [x] Inventory AST layers from `src/absyn.ml`.
 - [x] Inventory preprocessing behavior from `src/pre.ml`.
-- [ ] Inventory semantic checks from `src/check.ml`.
+- [x] Inventory semantic checks from `src/check.ml`.
 - [x] Inventory generation behavior from `src/gen.ml`.
 - [ ] Inventory user-facing language semantics from `docs/polygen-spec_EN.html`.
 - [ ] Cross-check unclear parts against `docs/polygen-spec_IT.html`.
 - [x] Write a parity notes document inside the project.
-- [ ] Classify features into exact parity, intentional changes, and deferred work.
-- [ ] Document the intentional randomness change clearly.
+- [x] Classify features into exact parity, intentional changes, and deferred work.
+- [x] Document the intentional randomness change clearly.
 
 ## Phase 3: Fixtures and Test Inputs
 
-- [ ] Select a minimal smoke-test grammar fixture set.
-- [ ] Select an intermediate feature fixture set.
+- [x] Select a minimal smoke-test grammar fixture set.
+- [x] Select an intermediate feature fixture set.
 - [ ] Select an advanced feature fixture set.
-- [ ] Include fixtures for labels and label selection.
+- [x] Include fixtures for labels and label selection.
 - [ ] Include fixtures for concatenation and epsilon.
 - [ ] Include fixtures for recursion and termination behavior.
 - [ ] Include fixtures for unfolding and binding semantics.
-- [ ] Include fixtures for string escape handling.
-- [ ] Include fixtures with multilingual and accented text.
-- [ ] Include fixtures with multiline formatting that should parse without preprocessing.
-- [ ] Include fixtures for standalone grammar segments with and without wrapping parentheses.
+- [x] Include fixtures for string escape handling.
+- [x] Include fixtures with multilingual and accented text.
+- [x] Include fixtures with multiline formatting that should parse without preprocessing.
+- [x] Include fixtures for standalone grammar segments with and without wrapping parentheses.
 - [ ] Include at least one fixture that historically exposed weak randomness perception.
-- [ ] Organize fixtures for reuse by unit tests and docs examples.
+- [x] Organize fixtures for reuse by unit tests and docs examples.
 
 ## Phase 4: TypeScript Domain Model
 
@@ -128,8 +130,8 @@ This checklist is the operational source of truth for the rewrite. Keep it updat
 - [x] Implement malformed label usage checks.
 - [x] Implement duplicate declaration checks within a scope.
 - [x] Implement cyclic unfolding checks.
-- [ ] Implement other high-value semantic validation rules.
-- [ ] Decide how warnings are represented and surfaced.
+- [~] Implement other high-value semantic validation rules.
+- [x] Decide how warnings are represented and surfaced.
 - [ ] Add tests for preprocessing outputs.
 - [x] Add tests for semantic validation errors.
 
@@ -159,7 +161,7 @@ This checklist is the operational source of truth for the rewrite. Keep it updat
 - [x] Verify repeated seeded runs are identical.
 - [x] Verify repeated unseeded runs are not trivially predictable.
 - [x] Expose the resolved seed so unseeded runs can be replayed.
-- [ ] Document the randomness behavior in the package docs.
+- [x] Document the randomness behavior in the package docs.
 
 ## Phase 10: Public API and Packaging
 
@@ -171,8 +173,8 @@ This checklist is the operational source of truth for the rewrite. Keep it updat
 - [x] Generate declaration files.
 - [x] Ensure the published runtime path is browser-safe.
 - [x] Add package metadata suitable for npm publication.
-- [ ] Add package README content or link strategy if needed.
-- [ ] Add consumer-facing usage examples.
+- [x] Add package README content or link strategy if needed.
+- [x] Add consumer-facing usage examples.
 
 ## Phase 11: Test Suite and Verification
 
@@ -187,40 +189,40 @@ This checklist is the operational source of truth for the rewrite. Keep it updat
 - [x] Add tests proving valid multiline grammars parse without caller-side normalization.
 - [x] Add tests proving multilingual grammar content is accepted without accent stripping.
 - [x] Add tests for standalone grammar segment utilities.
-- [ ] Add browser-compatibility checks where practical.
-- [ ] Add clean consumer smoke tests.
+- [x] Add browser-compatibility checks where practical.
+- [x] Add clean consumer smoke tests.
 
 ## Phase 12: Documentation Site
 
 - [x] Scaffold the Nuxt 4 app.
 - [x] Add Nuxt Content.
-- [ ] Create the docs navigation structure.
+- [x] Create the docs navigation structure.
 - [x] Create a landing page.
-- [ ] Write the quick-start guide.
-- [ ] Write installation and import guidance.
-- [ ] Write the API reference.
-- [ ] Write the grammar basics guide.
-- [ ] Write the operators reference.
-- [ ] Write labels and scoping documentation.
-- [ ] Write recursion and probability guidance.
-- [ ] Write troubleshooting and error documentation.
-- [ ] Write example-driven pages using real grammar snippets.
-- [ ] Ensure all code examples reflect the actual library API.
+- [x] Write the quick-start guide.
+- [x] Write installation and import guidance.
+- [x] Write the API reference.
+- [x] Write the grammar basics guide.
+- [x] Write the operators reference.
+- [x] Write labels and scoping documentation.
+- [x] Write recursion and probability guidance.
+- [x] Write troubleshooting and error documentation.
+- [x] Write example-driven pages using real grammar snippets.
+- [x] Ensure all code examples reflect the actual library API.
 - [x] Build the docs successfully.
 
 ## Phase 13: Migration and Release Readiness
 
-- [ ] Rewrite the root README for the new project direction.
-- [ ] Explain the relationship between legacy OCaml sources and the new TypeScript workspace.
-- [ ] Document the library-first scope change.
-- [ ] Document any intentionally deferred language features.
-- [ ] Verify linting passes.
-- [ ] Verify formatting checks pass.
-- [ ] Verify tests pass.
-- [ ] Verify type-checking passes.
-- [ ] Verify the package builds.
-- [ ] Verify the docs build.
-- [ ] Verify installability from a clean external sample project.
+- [x] Rewrite the root README for the new project direction.
+- [x] Explain the relationship between legacy OCaml sources and the new TypeScript workspace.
+- [x] Document the library-first scope change.
+- [x] Document any intentionally deferred language features.
+- [x] Verify linting passes.
+- [x] Verify formatting checks pass.
+- [x] Verify tests pass.
+- [x] Verify type-checking passes.
+- [x] Verify the package builds.
+- [x] Verify the docs build.
+- [x] Verify installability from a clean external sample project.
 
 ## Expansion Backlog
 
@@ -230,6 +232,7 @@ Only expand these after the first release scope is under control.
 - [ ] Optional interactive docs playground.
 - [ ] Optional compiled grammar import or caching strategies.
 - [ ] Optional deeper semantic analysis beyond the first release checks.
+- [ ] Optional less-strict compatibility mode.
 
 ## Session Log
 
@@ -246,4 +249,15 @@ Update this section briefly at the end of each session.
 - [x] Added recursion-aware generation safeguards with an explicit expansion budget, plus multiline generation coverage.
 - [x] Exposed resolved seed metadata for replayable unseeded runs and validated seed input handling.
 - [x] Added compile-time checks for duplicate declarations in the same scope and cyclic unfold chains.
-- [ ] Next session log entry.
+- [x] Added project-owned legacy grammar fixtures and smoke tests for real grammar inputs, including the legacy unfold example.
+- [x] Replaced the placeholder docs with a navigable first-pass documentation set covering quick start, API, grammar basics, randomness, and troubleshooting.
+- [x] Added shared original-project credits to the docs shell and expanded docs coverage with operators and labels/scoping pages.
+- [x] Added an example-driven docs page based on the same legacy fixtures used by the package smoke tests.
+- [x] Rewrote the root README and added a package README so the repository and npm package both describe the TypeScript workspace, scope, and original-project credits.
+- [x] Added a visible AI-development disclosure to the shared docs shell and both public readmes.
+- [x] Added a clean consumer smoke-test script that packs the library and exercises it from a temporary external project.
+- [x] Verified clean external installability by packing `polygen`, installing it into a temporary project, and running its public API successfully.
+- [x] Added a packaged browser smoke test, expanded fixture coverage for labels, multilingual input, multiline input, escapes, and segments, and documented the current parity boundary plus deferred warning-model work.
+- [x] Re-ran workspace verification successfully: format check, lint, tests, typecheck, package build, docs build, consumer smoke, and browser smoke all passed.
+- [x] Added a real compile warnings surface, exposed warnings through `compileGrammarWithInfo(...)` and top-level `...WithInfo(...)` APIs, and wrote initial exploration notes for a future less-strict compatibility mode.
+- [x] Re-verified the warnings release after implementation: 44 package tests passed, docs build passed, and both consumer/browser smoke tests still passed.

@@ -26,14 +26,21 @@ export type {
   CompiledSequence,
   CompiledTerminalAtom
 } from "./compiled";
-export { compileGrammar, CompileError } from "./compile";
+export {
+  compileGrammar,
+  compileGrammarWithInfo,
+  CompileError,
+  type CompileResult,
+  type CompileWarning,
+  type CompileWarningCode
+} from "./compile";
 export {
   generateCompiled,
   GenerationError,
   type GenerateOptions
 } from "./generator";
 export { parseGrammar, parseSegment, ParserError } from "./parser";
-import { compileGrammar } from "./compile";
+import { compileGrammarWithInfo, type CompileWarning } from "./compile";
 import { generateCompiled } from "./generator";
 import { parseGrammar } from "./parser";
 import { createSegmentGrammar } from "./segment";
@@ -63,6 +70,7 @@ export interface PolygenOptions {
 export interface PolygenResult {
   resolvedSeed: number;
   text: string;
+  warnings: CompileWarning[];
 }
 
 export function polygen(grammar: string, options: PolygenOptions = {}): string {
@@ -74,7 +82,7 @@ export function polygenWithInfo(
   options: PolygenOptions = {}
 ): PolygenResult {
   const parsed = parseGrammar(grammar);
-  const compiled = compileGrammar(parsed);
+  const compilation = compileGrammarWithInfo(parsed);
   const random = createRandomSource(options.seed);
   const generateOptions = {
     random: random.random
@@ -99,7 +107,8 @@ export function polygenWithInfo(
 
   return {
     resolvedSeed: random.resolvedSeed,
-    text: generateCompiled(compiled, generateOptions)
+    text: generateCompiled(compilation.compiled, generateOptions),
+    warnings: compilation.warnings
   };
 }
 

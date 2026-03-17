@@ -80,19 +80,26 @@ The TypeScript package will also support standalone grammar segments.
 2. Ungrouped bodies like `A | B | C` should be accepted.
 3. The helper should wrap the segment into a valid temporary grammar without requiring caller-side boilerplate.
 
-## Status
+## Current Classification
 
-### Completed
+### Verified Parity Or Equivalent Behavior
 
-1. Workspace scaffold under `typescript/`
-2. Initial public TypeScript package skeleton
-3. Initial Nuxt docs scaffold
-4. First tokenizer implementation target identified and started
+1. Grammar declarations, productions, alternatives, nested groups, lock syntax, and unfold syntax are supported in the TypeScript port.
+2. Undefined non-terminals are rejected during compilation.
+3. Cyclic unfolding is rejected during compilation.
+4. String escape handling includes legacy-style escaped control characters and three-digit octal escapes.
+5. Comments may nest.
 
-### Next Parity Work
+### Intentional Changes
 
-1. Inventory AST layers from `src/absyn.ml`
-2. Inventory parser productions from `src/parser.mly`
-3. Inventory preprocessing from `src/pre.ml`
-4. Inventory generator semantics from `src/gen.ml`
-5. Classify exact-parity versus intentional behavior differences beyond lexing
+1. Unicode grammar input is accepted without caller-side normalization.
+2. Unseeded generation derives a high-entropy runtime seed and exposes it as `resolvedSeed` for replayability.
+3. A segment utility exists for grouped and ungrouped production bodies.
+4. The rewrite is library-first rather than CLI-first.
+
+### Deferred Or Incomplete Areas
+
+1. Import declarations are parsed but intentionally unsupported in compilation.
+2. The warning model from the OCaml checker is only partially surfaced so far.
+3. Full feature-by-feature parity against the historical HTML specification is still incomplete.
+4. Exact parity classification for every generator semantic corner case is still ongoing.
