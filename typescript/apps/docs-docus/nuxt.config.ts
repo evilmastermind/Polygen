@@ -23,7 +23,20 @@ export default defineNuxtConfig({
     build: {
       markdown: {
         highlight: {
-          langs: ["bash", "diff", "json", "js", "ts", "html", "css", "vue", "shell", "mdc", "md", "yaml"]
+          langs: [
+            "bash",
+            "diff",
+            "json",
+            "js",
+            "ts",
+            "html",
+            "css",
+            "vue",
+            "shell",
+            "mdc",
+            "md",
+            "yaml"
+          ]
         },
         remarkPlugins: {
           "remark-mdc": {

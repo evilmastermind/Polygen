@@ -11,7 +11,9 @@ const props = defineProps<{
 const { locale, t } = useDocusI18n();
 
 const nuxtUiLocale = computed(
-  () => nuxtUiLocales[locale.value as keyof typeof nuxtUiLocales] || nuxtUiLocales.en
+  () =>
+    nuxtUiLocales[locale.value as keyof typeof nuxtUiLocales] ||
+    nuxtUiLocales.en
 );
 const lang = computed(() => nuxtUiLocale.value.code);
 const dir = computed(() => nuxtUiLocale.value.dir);
@@ -34,12 +36,20 @@ useSeoMeta({
   description: () => t("common.error.description")
 });
 
-const { data: navigation } = await useAsyncData("navigation_docs", () => queryCollectionNavigation("docs" as keyof PageCollections), {
-  transform: (data: ContentNavigationItem[]) => transformNavigation(data)
-});
-const { data: files } = useLazyAsyncData("search_docs", () => queryCollectionSearchSections("docs" as keyof PageCollections), {
-  server: false
-});
+const { data: navigation } = await useAsyncData(
+  "navigation_docs",
+  () => queryCollectionNavigation("docs" as keyof PageCollections),
+  {
+    transform: (data: ContentNavigationItem[]) => transformNavigation(data)
+  }
+);
+const { data: files } = useLazyAsyncData(
+  "search_docs",
+  () => queryCollectionSearchSections("docs" as keyof PageCollections),
+  {
+    server: false
+  }
+);
 
 provide("navigation", navigation);
 </script>

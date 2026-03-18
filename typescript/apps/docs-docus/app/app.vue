@@ -9,7 +9,9 @@ const site = useSiteConfig();
 const { locale } = useDocusI18n();
 
 const nuxtUiLocale = computed(
-  () => nuxtUiLocales[locale.value as keyof typeof nuxtUiLocales] || nuxtUiLocales.en
+  () =>
+    nuxtUiLocales[locale.value as keyof typeof nuxtUiLocales] ||
+    nuxtUiLocales.en
 );
 const lang = computed(() => nuxtUiLocale.value.code);
 const dir = computed(() => nuxtUiLocale.value.dir);
@@ -34,7 +36,8 @@ useSeoMeta({
 
 const { data: navigation } = await useAsyncData(
   () => `navigation_${collectionName.value}`,
-  () => queryCollectionNavigation(collectionName.value as keyof PageCollections),
+  () =>
+    queryCollectionNavigation(collectionName.value as keyof PageCollections),
   {
     transform: (data: ContentNavigationItem[]) => transformNavigation(data)
   }
@@ -42,7 +45,10 @@ const { data: navigation } = await useAsyncData(
 
 const { data: files } = useLazyAsyncData(
   `search_${collectionName.value}`,
-  () => queryCollectionSearchSections(collectionName.value as keyof PageCollections),
+  () =>
+    queryCollectionSearchSections(
+      collectionName.value as keyof PageCollections
+    ),
   {
     server: false
   }

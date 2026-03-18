@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { kebabCase } from "scule";
 import { findPageHeadline } from "@nuxt/content/utils";
-import type { ContentNavigationItem, Collections, DocsCollectionItem } from "@nuxt/content";
+import type {
+  ContentNavigationItem,
+  Collections,
+  DocsCollectionItem
+} from "@nuxt/content";
 
 definePageMeta({
   layout: "docs"
@@ -12,43 +16,60 @@ const { locale, isEnabled, t } = useDocusI18n();
 const appConfig = useAppConfig();
 const navigation = inject<Ref<ContentNavigationItem[]>>("navigation");
 
-const collectionName = computed(() => (isEnabled.value ? `docs_${locale.value}` : "docs"));
+const collectionName = computed(() =>
+  isEnabled.value ? `docs_${locale.value}` : "docs"
+);
 
 const [{ data: page }, { data: surround }] = await Promise.all([
-  useAsyncData(kebabCase(route.path), () =>
-    queryCollection(collectionName.value as keyof Collections)
-      .path(route.path)
-      .first() as Promise<DocsCollectionItem>
+  useAsyncData(
+    kebabCase(route.path),
+    () =>
+      queryCollection(collectionName.value as keyof Collections)
+        .path(route.path)
+        .first() as Promise<DocsCollectionItem>
   ),
   useAsyncData(`${kebabCase(route.path)}-surround`, () => {
-    return queryCollectionItemSurroundings(collectionName.value as keyof Collections, route.path, {
-      fields: ["description"]
-    });
+    return queryCollectionItemSurroundings(
+      collectionName.value as keyof Collections,
+      route.path,
+      {
+        fields: ["description"]
+      }
+    );
   })
 ]);
 
 if (!page.value) {
-  throw createError({ statusCode: 404, statusMessage: "Page not found", fatal: true });
+  throw createError({
+    statusCode: 404,
+    statusMessage: "Page not found",
+    fatal: true
+  });
 }
 
 const title = page.value.seo?.title || page.value.title;
 const description = page.value.seo?.description || page.value.description;
 
 const headline = ref(findPageHeadline(navigation?.value, page.value?.path));
-const breadcrumbs = computed(() => findPageBreadcrumbs(navigation?.value, page.value?.path || ""));
+const breadcrumbs = computed(() =>
+  findPageBreadcrumbs(navigation?.value, page.value?.path || "")
+);
 
 useSeo({
   title,
   description,
   type: "article",
-  modifiedAt: (page.value as unknown as Record<string, unknown>).modifiedAt as string | undefined,
+  modifiedAt: (page.value as unknown as Record<string, unknown>).modifiedAt as
+    | string
+    | undefined,
   breadcrumbs
 });
 
 watch(
   () => navigation?.value,
   () => {
-    headline.value = findPageHeadline(navigation?.value, page.value?.path) || headline.value;
+    headline.value =
+      findPageHeadline(navigation?.value, page.value?.path) || headline.value;
   }
 );
 
@@ -95,10 +116,7 @@ const editLink = computed(() => {
     </UPageHeader>
 
     <UPageBody>
-      <ContentRenderer
-        v-if="page"
-        :value="page"
-      />
+      <ContentRenderer v-if="page" :value="page" />
 
       <USeparator v-if="github">
         <div class="flex items-center gap-2 text-sm text-muted">
@@ -110,9 +128,9 @@ const editLink = computed(() => {
             icon="i-lucide-pen"
             :ui="{ leadingIcon: 'size-4' }"
           >
-            {{ t('docs.edit') }}
+            {{ t("docs.edit") }}
           </UButton>
-          <span>{{ t('common.or') }}</span>
+          <span>{{ t("common.or") }}</span>
           <UButton
             variant="link"
             color="neutral"
@@ -121,7 +139,7 @@ const editLink = computed(() => {
             icon="i-lucide-alert-circle"
             :ui="{ leadingIcon: 'size-4' }"
           >
-            {{ t('docs.report') }}
+            {{ t("docs.report") }}
           </UButton>
         </div>
       </USeparator>

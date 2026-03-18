@@ -5,7 +5,8 @@ defineProps<{
   links?: ContentTocLink[];
 }>();
 
-const { subNavigationMode, sidebarNavigation, currentSection } = useSubNavigation();
+const { subNavigationMode, sidebarNavigation, currentSection } =
+  useSubNavigation();
 const { t } = useDocusI18n();
 
 const menuDrawerOpen = ref(false);

@@ -27,7 +27,9 @@ export function useSeo(options: UseSeoOptions) {
     return joinURL(site.url, route.path);
   });
 
-  const baseUrl = computed(() => (site.url ? withoutTrailingSlash(site.url) : ""));
+  const baseUrl = computed(() =>
+    site.url ? withoutTrailingSlash(site.url) : ""
+  );
 
   useSeoMeta({
     title,

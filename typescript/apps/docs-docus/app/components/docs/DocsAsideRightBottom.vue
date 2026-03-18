@@ -4,10 +4,7 @@ const { t } = useDocusI18n();
 </script>
 
 <template>
-  <div
-    v-if="appConfig.toc?.bottom?.links?.length"
-    class="space-y-6"
-  >
+  <div v-if="appConfig.toc?.bottom?.links?.length" class="space-y-6">
     <USeparator type="dashed" />
 
     <UPageLinks
