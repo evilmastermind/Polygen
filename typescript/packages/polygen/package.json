@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "type": "module",
   "description": "Browser-compatible TypeScript rewrite of Polygen.",
-  "license": "SEE LICENSE IN ../../License",
+  "license": "GPL-2.0-or-later",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -14,7 +14,9 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "LICENSE",
+    "README.md"
   ],
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts",

@@ -29,6 +29,7 @@ This checklist is the operational source of truth for the rewrite. Keep it updat
 - [x] Runtime target: browser + modern Node ESM.
 - [x] First release scope: library-first, no legacy CLI requirement.
 - [x] Docs stack: Nuxt 4 + Nuxt Content.
+- [x] Docs migration approach: build a staged Docus app alongside the current docs app before any cutover.
 - [x] Randomness policy: preserve the seeding feature, but use high-entropy true randomness when no seed is provided.
 - [x] Grammar input policy: valid grammars should be accepted without caller-side newline flattening or accent stripping.
 - [x] API direction: include a utility for working from a grammar segment, not only full grammar files.
@@ -209,6 +210,13 @@ This checklist is the operational source of truth for the rewrite. Keep it updat
 - [x] Write example-driven pages using real grammar snippets.
 - [x] Ensure all code examples reflect the actual library API.
 - [x] Build the docs successfully.
+- [x] Analyze the Docus reference app used by the Nuxt i18n-style example.
+- [x] Scaffold a staged `apps/docs-docus` app without replacing the current docs app.
+- [x] Migrate the current docs content into a Docus section tree.
+- [x] Add Polygen branding and landing-page copy to the staged Docus app.
+- [x] Build the staged Docus app successfully.
+- [x] Remove out-of-scope Docus features from the staged docs app so it stays a user-facing docs site only.
+- [~] Refine the staged Docus app to more closely match the intended Nuxt i18n-style information architecture.
 
 ## Phase 13: Migration and Release Readiness
 
@@ -232,7 +240,7 @@ Only expand these after the first release scope is under control.
 - [ ] Optional interactive docs playground.
 - [ ] Optional compiled grammar import or caching strategies.
 - [ ] Optional deeper semantic analysis beyond the first release checks.
-- [ ] Optional less-strict compatibility mode.
+- [~] Optional less-strict compatibility mode.
 
 ## Session Log
 
@@ -258,6 +266,12 @@ Update this section briefly at the end of each session.
 - [x] Added a clean consumer smoke-test script that packs the library and exercises it from a temporary external project.
 - [x] Verified clean external installability by packing `polygen`, installing it into a temporary project, and running its public API successfully.
 - [x] Added a packaged browser smoke test, expanded fixture coverage for labels, multilingual input, multiline input, escapes, and segments, and documented the current parity boundary plus deferred warning-model work.
+- [x] Analyzed the Docus example app, scaffolded a staged `apps/docs-docus` migration target, migrated the current docs content into Docus sections, and fixed the first staged build blockers by adding direct CSS dependencies required under pnpm.
+- [x] Reworked `apps/docs-docus` from the full Docus layer into a slim Nuxt UI plus Nuxt Content docs app with the Docus-style sectioned information architecture, removing AI assistant, MCP, LLM, OG-image, and raw-markdown routes from the build output.
+- [x] Started the compiler-owned less-strict compatibility layer with an opt-in `compilePolicy`, plus warning-backed fallbacks for undefined non-terminals in atom position and invalid explicit label selection.
+- [x] Verified the first compatibility-policy slice: strict mode stayed intact, compat-mode fallback tests passed, and the full workspace verification stack remained green.
 - [x] Re-ran workspace verification successfully: format check, lint, tests, typecheck, package build, docs build, consumer smoke, and browser smoke all passed.
 - [x] Added a real compile warnings surface, exposed warnings through `compileGrammarWithInfo(...)` and top-level `...WithInfo(...)` APIs, and wrote initial exploration notes for a future less-strict compatibility mode.
 - [x] Re-verified the warnings release after implementation: 44 package tests passed, docs build passed, and both consumer/browser smoke tests still passed.
+- [x] Documented the first compatibility-policy implementation across quick start, API, troubleshooting, compatibility status, and public readmes so the new warning-backed fallbacks are discoverable.
+- [x] Aligned the TypeScript rewrite's public licensing story with the original project: package metadata now uses `GPL-2.0-or-later`, the package carries its own `LICENSE` file, and the repo/docs/readmes now mention the GPL license explicitly.

@@ -1,0 +1,29 @@
+<script setup lang="ts">
+import type { Collections } from "@nuxt/content";
+
+const route = useRoute();
+
+const { data: page } = await useAsyncData("landing", () =>
+  queryCollection("landing" as keyof Collections).path(route.path).first()
+);
+
+if (!page.value) {
+  throw createError({ statusCode: 404, statusMessage: "Page not found", fatal: true });
+}
+
+const title = page.value.seo?.title || page.value.title;
+const description = page.value.seo?.description || page.value.description;
+
+useSeo({
+  title,
+  description,
+  type: "website"
+});
+</script>
+
+<template>
+  <ContentRenderer
+    v-if="page"
+    :value="page"
+  />
+</template>

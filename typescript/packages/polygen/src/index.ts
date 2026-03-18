@@ -30,9 +30,13 @@ export {
   compileGrammar,
   compileGrammarWithInfo,
   CompileError,
+  type CompilePolicy,
+  type CompilePolicyPreset,
   type CompileResult,
   type CompileWarning,
-  type CompileWarningCode
+  type CompileWarningCode,
+  type InvalidSelectionLabelPolicy,
+  type UndefinedNonterminalPolicy
 } from "./compile";
 export {
   generateCompiled,
@@ -40,7 +44,11 @@ export {
   type GenerateOptions
 } from "./generator";
 export { parseGrammar, parseSegment, ParserError } from "./parser";
-import { compileGrammarWithInfo, type CompileWarning } from "./compile";
+import {
+  compileGrammarWithInfo,
+  type CompilePolicy,
+  type CompileWarning
+} from "./compile";
 import { generateCompiled } from "./generator";
 import { parseGrammar } from "./parser";
 import { createSegmentGrammar } from "./segment";
@@ -61,6 +69,7 @@ export {
 } from "./tokenizer";
 
 export interface PolygenOptions {
+  compilePolicy?: CompilePolicy;
   labels?: string[];
   maxExpansions?: number;
   seed?: number;
@@ -82,7 +91,7 @@ export function polygenWithInfo(
   options: PolygenOptions = {}
 ): PolygenResult {
   const parsed = parseGrammar(grammar);
-  const compilation = compileGrammarWithInfo(parsed);
+  const compilation = compileGrammarWithInfo(parsed, options.compilePolicy);
   const random = createRandomSource(options.seed);
   const generateOptions = {
     random: random.random

@@ -8,6 +8,7 @@
   "scripts": {
     "build": "pnpm -r build",
     "dev:docs": "pnpm --filter @polygen/docs dev",
+    "dev:docs-docus": "pnpm --filter @polygen/docs-docus dev",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "pnpm -r lint",

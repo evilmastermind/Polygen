@@ -5,6 +5,7 @@ import type {
   Grammar,
   GroupAtom,
   LockAtom,
+  MultiselectAtom,
   NonterminalAtom,
   Production,
   SelectAtom,
@@ -31,7 +32,21 @@ type Placement = {
 
 type SourceEnv = Map<string, BindDeclaration>;
 
-export type CompileWarningCode = "unfold-assign" | "useless-unfold";
+export type CompilePolicyPreset = "compat" | "strict";
+export type UndefinedNonterminalPolicy = "error" | "warn-as-terminal";
+export type InvalidSelectionLabelPolicy = "error" | "warn-ignore";
+
+export interface CompilePolicy {
+  invalidSelectionLabel?: InvalidSelectionLabelPolicy;
+  preset?: CompilePolicyPreset;
+  undefinedNonterminal?: UndefinedNonterminalPolicy;
+}
+
+export type CompileWarningCode =
+  | "invalid-label-selection-fallback"
+  | "undefined-nonterminal-fallback"
+  | "unfold-assign"
+  | "useless-unfold";
 
 export interface CompileWarning {
   code: CompileWarningCode;
@@ -46,8 +61,24 @@ export interface CompileResult {
 }
 
 interface CompileContext {
+  policy: NormalizedCompilePolicy;
   warnings: CompileWarning[];
 }
+
+interface NormalizedCompilePolicy {
+  invalidSelectionLabel: InvalidSelectionLabelPolicy;
+  preset: CompilePolicyPreset;
+  undefinedNonterminal: UndefinedNonterminalPolicy;
+}
+
+type SelectionDecision =
+  | { type: "clear-active-labels" }
+  | { type: "preserve-target" }
+  | { label: string; type: "select-label" };
+
+type MultiselectDecision =
+  | { type: "preserve-target" }
+  | { labels: string[]; type: "select-labels" };
 
 export class CompileError extends Error {
   readonly range: SourceRange;
@@ -59,18 +90,24 @@ export class CompileError extends Error {
   }
 }
 
-export function compileGrammar(grammar: Grammar): CompiledGrammar {
-  return compileGrammarWithInfo(grammar).compiled;
+export function compileGrammar(
+  grammar: Grammar,
+  policy?: CompilePolicy
+): CompiledGrammar {
+  return compileGrammarWithInfo(grammar, policy).compiled;
 }
 
-export function compileGrammarWithInfo(grammar: Grammar): CompileResult {
-  const context = createCompileContext();
+export function compileGrammarWithInfo(
+  grammar: Grammar,
+  policy?: CompilePolicy
+): CompileResult {
+  const context = createCompileContext(policy);
   validateGrammar(grammar, context);
   const env = extendSourceEnv(new Map(), grammar.declarations);
 
   return {
     compiled: {
-      declarations: compileDeclarations(grammar.declarations, env),
+      declarations: compileDeclarations(grammar.declarations, env, context),
       range: grammar.range,
       type: "compiled-grammar"
     },
@@ -78,8 +115,35 @@ export function compileGrammarWithInfo(grammar: Grammar): CompileResult {
   };
 }
 
-function createCompileContext(): CompileContext {
-  return { warnings: [] };
+function createCompileContext(policy?: CompilePolicy): CompileContext {
+  return {
+    policy: normalizeCompilePolicy(policy),
+    warnings: []
+  };
+}
+
+function normalizeCompilePolicy(
+  policy?: CompilePolicy
+): NormalizedCompilePolicy {
+  const preset = policy?.preset ?? "strict";
+  const defaults =
+    preset === "compat"
+      ? {
+          invalidSelectionLabel: "warn-ignore" as const,
+          undefinedNonterminal: "warn-as-terminal" as const
+        }
+      : {
+          invalidSelectionLabel: "error" as const,
+          undefinedNonterminal: "error" as const
+        };
+
+  return {
+    invalidSelectionLabel:
+      policy?.invalidSelectionLabel ?? defaults.invalidSelectionLabel,
+    preset,
+    undefinedNonterminal:
+      policy?.undefinedNonterminal ?? defaults.undefinedNonterminal
+  };
 }
 
 function validateGrammar(grammar: Grammar, context: CompileContext): void {
@@ -273,16 +337,18 @@ function addCompileWarning(
 
 function compileDeclarations(
   declarations: Declaration[],
-  env: SourceEnv
+  env: SourceEnv,
+  context: CompileContext
 ): CompiledDeclaration[] {
   return declarations.map((declaration) =>
-    compileDeclaration(declaration, env)
+    compileDeclaration(declaration, env, context)
   );
 }
 
 function compileDeclaration(
   declaration: Declaration,
-  env: SourceEnv
+  env: SourceEnv,
+  context: CompileContext
 ): CompiledDeclaration {
   if (declaration.type === "import") {
     throw new CompileError(
@@ -293,7 +359,7 @@ function compileDeclaration(
 
   return {
     mode: declaration.mode,
-    production: compileProduction(declaration.production, env),
+    production: compileProduction(declaration.production, env, context),
     symbol: declaration.symbol,
     type: "compiled-bind"
   };
@@ -301,11 +367,12 @@ function compileDeclaration(
 
 function compileProduction(
   production: Production,
-  env: SourceEnv
+  env: SourceEnv,
+  context: CompileContext
 ): CompiledProduction {
   return {
     alternatives: production.alternatives.flatMap((sequence) =>
-      compileSequence(sequence, env)
+      compileSequence(sequence, env, context)
     ),
     type: "compiled-production"
   };
@@ -313,13 +380,16 @@ function compileProduction(
 
 function compileSequence(
   sequence: Sequence,
-  env: SourceEnv
+  env: SourceEnv,
+  context: CompileContext
 ): CompiledSequence[] {
   const positionalVariants = resolvePositionalVariants(sequence);
   const compiledSequences: CompiledSequence[] = [];
 
   for (const atoms of positionalVariants) {
-    const placementMatrix = atoms.map((atom) => compileAtom(atom, env));
+    const placementMatrix = atoms.map((atom) =>
+      compileAtom(atom, env, context)
+    );
     const placementCombos = combine(placementMatrix);
 
     for (const combo of placementCombos) {
@@ -378,28 +448,32 @@ function resolvePositionalVariants(sequence: Sequence): Atom[][] {
   );
 }
 
-function compileAtom(atom: Atom, env: SourceEnv): Placement[] {
+function compileAtom(
+  atom: Atom,
+  env: SourceEnv,
+  context: CompileContext
+): Placement[] {
   switch (atom.type) {
     case "terminal":
       return [{ atom: compileTerminal(atom), mobile: false }];
 
     case "nonterm":
-      return [{ atom: compileNonterminal(atom, env), mobile: false }];
+      return [{ atom: compileNonterminal(atom, env, context), mobile: false }];
 
     case "select":
-      return compileSelect(atom, env);
+      return compileSelect(atom, env, context);
 
     case "multiselect":
-      return compileMultiselect(atom, env);
+      return compileMultiselect(atom, env, context);
 
     case "lock":
-      return compileLocked(atom, env);
+      return compileLocked(atom, env, context);
 
     case "unfold":
-      return compileUnfold(atom, env);
+      return compileUnfold(atom, env, context);
 
     case "group":
-      return compileGroup(atom, env);
+      return compileGroup(atom, env, context);
   }
 }
 
@@ -412,7 +486,8 @@ function compileTerminal(atom: TerminalAtom): CompiledTerminalAtom {
 
 function compileNonterminal(
   atom: NonterminalAtom,
-  env: SourceEnv
+  env: SourceEnv,
+  context: CompileContext
 ): CompiledAtom {
   if (atom.path.segments.length !== 1) {
     throw new CompileError(
@@ -423,11 +498,23 @@ function compileNonterminal(
 
   const symbol = atom.path.segments[0];
 
-  if (symbol === undefined || !env.has(symbol)) {
-    throw new CompileError(
-      `Undefined non-terminal '${symbol ?? "<missing>"}'.`,
-      atom.range
-    );
+  if (symbol === undefined) {
+    throw new CompileError("Missing non-terminal symbol.", atom.range);
+  }
+
+  if (!env.has(symbol)) {
+    if (context.policy.undefinedNonterminal === "warn-as-terminal") {
+      addCompileWarning(
+        context,
+        "undefined-nonterminal-fallback",
+        `Undefined non-terminal '${symbol}' was treated as terminal text in compatibility mode.`,
+        atom.range
+      );
+
+      return createTerminalAtom(symbol);
+    }
+
+    throw new CompileError(`Undefined non-terminal '${symbol}'.`, atom.range);
   }
 
   return {
@@ -436,11 +523,26 @@ function compileNonterminal(
   };
 }
 
-function compileSelect(atom: SelectAtom, env: SourceEnv): Placement[] {
-  validateSelectionLabel(atom.target, atom.label, env, atom.range);
+function compileSelect(
+  atom: SelectAtom,
+  env: SourceEnv,
+  context: CompileContext
+): Placement[] {
+  const decision = resolveSelectionDecision(
+    atom.target,
+    atom.label,
+    env,
+    atom.range,
+    context
+  );
+  const compiledTarget = compileAtom(atom.target, env, context);
 
-  return compileAtom(atom.target, env).map((placement) =>
-    atom.label === undefined
+  if (decision.type === "preserve-target") {
+    return compiledTarget;
+  }
+
+  return compiledTarget.map((placement) =>
+    decision.type === "clear-active-labels"
       ? {
           atom: {
             target: placement.atom,
@@ -450,7 +552,7 @@ function compileSelect(atom: SelectAtom, env: SourceEnv): Placement[] {
         }
       : {
           atom: {
-            label: atom.label,
+            label: decision.label,
             target: placement.atom,
             type: "compiled-select"
           },
@@ -460,20 +562,25 @@ function compileSelect(atom: SelectAtom, env: SourceEnv): Placement[] {
 }
 
 function compileMultiselect(
-  atom: SelectAtom | { labels: string[]; target: Atom; type: "multiselect" },
-  env: SourceEnv
+  atom: MultiselectAtom,
+  env: SourceEnv,
+  context: CompileContext
 ): Placement[] {
-  if (atom.type !== "multiselect") {
-    throw new Error("Expected multiselect atom.");
+  const decision = resolveMultiselectDecision(
+    atom.target,
+    atom.labels,
+    env,
+    atom.range,
+    context
+  );
+
+  if (decision.type === "preserve-target") {
+    return compileAtom(atom.target, env, context);
   }
 
-  for (const label of atom.labels) {
-    validateSelectionLabel(atom.target, label, env, atom.target.range);
-  }
-
-  return compileAtom(atom.target, env).map((placement) => ({
+  return compileAtom(atom.target, env, context).map((placement) => ({
     atom: {
-      labels: [...atom.labels],
+      labels: [...decision.labels],
       target: placement.atom,
       type: "compiled-multiselect"
     },
@@ -481,36 +588,117 @@ function compileMultiselect(
   }));
 }
 
-function validateSelectionLabel(
+function resolveSelectionDecision(
   target: Atom,
   label: string | undefined,
   env: SourceEnv,
-  range: SourceRange
-): void {
+  range: SourceRange,
+  context: CompileContext
+): SelectionDecision {
   if (label === undefined) {
-    return;
+    return { type: "clear-active-labels" };
   }
 
-  const availableLabels = getAvailableLabels(target, env);
+  const availableLabels = getAvailableLabels(target, env, context);
 
   if (availableLabels === null) {
-    return;
+    return { label, type: "select-label" };
   }
 
-  if (!availableLabels.has(label)) {
-    throw new CompileError(
-      `Label '${label}' is not available on the selected target.`,
+  if (availableLabels.has(label)) {
+    return { label, type: "select-label" };
+  }
+
+  if (context.policy.invalidSelectionLabel === "warn-ignore") {
+    addCompileWarning(
+      context,
+      "invalid-label-selection-fallback",
+      `Label '${label}' is not available on the selected target and was ignored in compatibility mode.`,
       range
     );
+
+    return { type: "preserve-target" };
   }
+
+  throw new CompileError(
+    `Label '${label}' is not available on the selected target.`,
+    range
+  );
 }
 
-function getAvailableLabels(target: Atom, env: SourceEnv): Set<string> | null {
+function resolveMultiselectDecision(
+  target: Atom,
+  labels: string[],
+  env: SourceEnv,
+  range: SourceRange,
+  context: CompileContext
+): MultiselectDecision {
+  const availableLabels = getAvailableLabels(target, env, context);
+
+  if (availableLabels === null) {
+    return {
+      labels: [...labels],
+      type: "select-labels"
+    };
+  }
+
+  const validLabels = labels.filter((label) => availableLabels.has(label));
+
+  if (validLabels.length === labels.length) {
+    return {
+      labels: validLabels,
+      type: "select-labels"
+    };
+  }
+
+  if (context.policy.invalidSelectionLabel === "warn-ignore") {
+    for (const label of labels) {
+      if (!availableLabels.has(label)) {
+        addCompileWarning(
+          context,
+          "invalid-label-selection-fallback",
+          `Label '${label}' is not available on the selected target and was ignored in compatibility mode.`,
+          range
+        );
+      }
+    }
+
+    return validLabels.length === 0
+      ? { type: "preserve-target" }
+      : {
+          labels: validLabels,
+          type: "select-labels"
+        };
+  }
+
+  const invalidLabel = labels.find((label) => !availableLabels.has(label));
+
+  throw new CompileError(
+    `Label '${invalidLabel ?? "<missing>"}' is not available on the selected target.`,
+    range
+  );
+}
+
+function getAvailableLabels(
+  target: Atom,
+  env: SourceEnv,
+  context: CompileContext
+): Set<string> | null {
   switch (target.type) {
     case "terminal":
       return new Set();
 
     case "nonterm": {
+      const symbol = target.path.segments[target.path.segments.length - 1];
+
+      if (
+        symbol !== undefined &&
+        !env.has(symbol) &&
+        context.policy.undefinedNonterminal === "warn-as-terminal"
+      ) {
+        return null;
+      }
+
       const declaration = lookupBinding(env, target);
       return getProductionLabels(declaration.production);
     }
@@ -526,7 +714,7 @@ function getAvailableLabels(target: Atom, env: SourceEnv): Set<string> | null {
 
     case "lock":
     case "unfold":
-      return getAvailableLabels(target.target, env);
+      return getAvailableLabels(target.target, env, context);
   }
 }
 
@@ -538,16 +726,28 @@ function getProductionLabels(production: Production): Set<string> {
   );
 }
 
-function compileLocked(atom: LockAtom, env: SourceEnv): Placement[] {
+function compileLocked(
+  atom: LockAtom,
+  env: SourceEnv,
+  context: CompileContext
+): Placement[] {
   return atom.target.type === "nonterm"
-    ? [{ atom: compileNonterminal(atom.target, env), mobile: false }]
-    : compileGroup(atom.target, env, true);
+    ? [{ atom: compileNonterminal(atom.target, env, context), mobile: false }]
+    : compileGroup(atom.target, env, context, true);
 }
 
-function compileUnfold(atom: UnfoldAtom, env: SourceEnv): Placement[] {
+function compileUnfold(
+  atom: UnfoldAtom,
+  env: SourceEnv,
+  context: CompileContext
+): Placement[] {
   if (atom.target.type === "nonterm") {
     const declaration = lookupBinding(env, atom.target);
-    const compiledProduction = compileProduction(declaration.production, env);
+    const compiledProduction = compileProduction(
+      declaration.production,
+      env,
+      context
+    );
 
     return compiledProduction.alternatives.map((sequence) => ({
       atom: createSubgrammarAtom([], {
@@ -558,12 +758,13 @@ function compileUnfold(atom: UnfoldAtom, env: SourceEnv): Placement[] {
     }));
   }
 
-  return compileGroup(atom.target, env, false, true);
+  return compileGroup(atom.target, env, context, false, true);
 }
 
 function compileGroup(
   group: GroupAtom,
   env: SourceEnv,
+  context: CompileContext,
   forceLocked = false,
   unfold = false
 ): Placement[] {
@@ -579,9 +780,14 @@ function compileGroup(
   const localEnv = extendSourceEnv(env, normalizedGroup.declarations);
   const declarations = compileDeclarations(
     normalizedGroup.declarations,
-    localEnv
+    localEnv,
+    context
   );
-  const production = compileProduction(normalizedGroup.production, localEnv);
+  const production = compileProduction(
+    normalizedGroup.production,
+    localEnv,
+    context
+  );
 
   if (unfold) {
     if (normalizedGroup.mode === "repeat-one-or-more") {

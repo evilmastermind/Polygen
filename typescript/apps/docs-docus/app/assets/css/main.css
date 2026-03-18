@@ -1,0 +1,37 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+@import 'tailwindcss';
+@import '@nuxt/ui';
+
+@theme {
+  --container-8xl: 88rem;
+  --font-sans: 'IBM Plex Sans', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+
+  --color-amber-50: #fff6e8;
+  --color-amber-100: #fde7c2;
+  --color-amber-200: #fbd18d;
+  --color-amber-300: #f4b45c;
+  --color-amber-400: #e58d30;
+  --color-amber-500: #c97020;
+  --color-amber-600: #aa5619;
+  --color-amber-700: #884117;
+  --color-amber-800: #5a2d14;
+  --color-amber-900: #30190f;
+  --color-amber-950: #1e1009;
+}
+
+:root {
+  --ui-container: var(--container-8xl);
+}
+
+body {
+  font-family: var(--font-sans);
+}
+
+h1,
+h2,
+h3,
+h4,
+.font-display {
+  font-family: 'Fraunces', serif;
+}

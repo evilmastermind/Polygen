@@ -44,12 +44,50 @@ Segment-based generation plus resolved-seed metadata.
 
 ## `PolygenOptions`
 
-| Field           | Type       | Meaning                                                        |
-| --------------- | ---------- | -------------------------------------------------------------- |
-| `seed`          | `number`   | Deterministic seed. Must be a finite integer.                  |
-| `start`         | `string`   | Start symbol. Defaults to `S`.                                 |
-| `labels`        | `string[]` | Active label environment for filtering alternatives.           |
-| `maxExpansions` | `number`   | Hard generation budget used to stop non-terminating recursion. |
+| Field           | Type       | Meaning                                                             |
+| --------------- | ---------- | ------------------------------------------------------------------- |
+| `compilePolicy` | `object`   | Optional compatibility policy for warning-backed compile fallbacks. |
+| `seed`          | `number`   | Deterministic seed. Must be a finite integer.                       |
+| `start`         | `string`   | Start symbol. Defaults to `S`.                                      |
+| `labels`        | `string[]` | Active label environment for filtering alternatives.                |
+| `maxExpansions` | `number`   | Hard generation budget used to stop non-terminating recursion.      |
+
+## `CompilePolicy`
+
+Current shape:
+
+| Field                   | Type                            | Meaning                                                                                                           |
+| ----------------------- | ------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `preset`                | `"strict" \| "compat"`          | `strict` keeps current behavior. `compat` enables the currently supported warning-backed fallbacks.               |
+| `undefinedNonterminal`  | `"error" \| "warn-as-terminal"` | Controls whether an undefined non-terminal in atom position throws or is treated as terminal text with a warning. |
+| `invalidSelectionLabel` | `"error" \| "warn-ignore"`      | Controls whether invalid explicit label selection throws or is ignored with a warning.                            |
+
+`compat` is opt-in. Strict behavior remains the default.
+
+Current compat behavior is intentionally narrow:
+
+- undefined simple non-terminals in atom position can fall back to terminal text with a warning
+- invalid explicit label selection can be ignored with a warning
+- parser syntax, declaration heads, cyclic unfolding, duplicate declarations, and runtime option validation remain strict
+
+Example:
+
+```ts
+import { polygenWithInfo } from "polygen";
+
+const result = polygenWithInfo(
+  'S ::= Greeting.missing; Greeting ::= formal: "Good day" | "Hi";',
+  {
+    compilePolicy: { preset: "compat" }
+  }
+);
+
+console.log(result.text);
+// "Good day" or "Hi"
+
+console.log(result.warnings.map((warning) => warning.code));
+// ["invalid-label-selection-fallback"]
+```
 
 ## Lower-Level Helpers
 
@@ -61,15 +99,17 @@ Returns the token stream with source ranges. Useful when debugging parser behavi
 
 Build the parsed AST without generating output.
 
-### `compileGrammar(ast)`
+### `compileGrammar(ast, policy?)`
 
 Runs preprocessing and compile-time validation to produce a runtime-ready grammar.
 
-### `compileGrammarWithInfo(ast)`
+### `compileGrammarWithInfo(ast, policy?)`
 
 Compiles a grammar and returns `{ compiled, warnings }`.
 
 Use this when you want a real diagnostics channel without changing strict error behavior.
+
+It also accepts the same optional compile policy as the top-level helpers.
 
 ### `generateCompiled(compiled, options)`
 
@@ -92,10 +132,12 @@ This is the lowest-level public path if you want to parse once and generate many
 
 Current warning codes:
 
-| Code             | Meaning                                                |
-| ---------------- | ------------------------------------------------------ |
-| `unfold-assign`  | An assignment-bound symbol is being unfolded           |
-| `useless-unfold` | An inline unfolded group has only a single alternative |
+| Code                               | Meaning                                                                      |
+| ---------------------------------- | ---------------------------------------------------------------------------- |
+| `invalid-label-selection-fallback` | An invalid explicit label selection was ignored in compatibility mode        |
+| `undefined-nonterminal-fallback`   | An undefined non-terminal was treated as terminal text in compatibility mode |
+| `unfold-assign`                    | An assignment-bound symbol is being unfolded                                 |
+| `useless-unfold`                   | An inline unfolded group has only a single alternative                       |
 
 ## Scope Notes
 

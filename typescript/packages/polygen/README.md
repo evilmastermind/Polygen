@@ -11,6 +11,8 @@ This package builds on the original Polygen project created by Alvise Spano and 
 - Original website: <https://polygen.org>
 - Original repository: <https://github.com/alvisespano/Polygen>
 
+The original project is licensed under the GNU General Public License, version 2 or later. This package preserves that licensing direction as GPL-2.0-or-later.
+
 ## Install
 
 ```bash
@@ -39,6 +41,7 @@ const segmentText = polygenSegment("alpha | beta | gamma");
 
 ## Options
 
+- `compilePolicy`: opt-in compatibility policy for warning-backed compile fallbacks
 - `seed`: deterministic seed for reproducible generation
 - `start`: explicit start symbol, defaulting to `S`
 - `labels`: active label environment
@@ -49,6 +52,17 @@ const segmentText = polygenSegment("alpha | beta | gamma");
 - Seeded runs are deterministic.
 - Unseeded runs derive a seed from runtime entropy.
 - `polygenWithInfo(...)` and `polygenSegmentWithInfo(...)` expose the resolved seed so an unseeded run can be replayed later.
+
+## Compatibility Policy
+
+Strict mode is the default.
+
+If you opt into `compilePolicy: { preset: "compat" }`, the package can currently downgrade two compile-time failures into warnings with fallbacks:
+
+- undefined simple non-terminals in atom position can be treated as terminal text
+- invalid explicit label selection can be ignored
+
+Use `polygenWithInfo(...)` or `polygenSegmentWithInfo(...)` if you want both the generated text and the emitted warning codes.
 
 ## Documentation
 
@@ -70,3 +84,9 @@ Intentionally deferred for the first release:
 - the full warning-model parity from the OCaml checker
 
 Verification coverage in the repository workspace includes a clean external consumer install smoke test and a browser-platform bundle smoke test against the packed package.
+
+## License
+
+This package is licensed as `GPL-2.0-or-later`.
+
+The package tarball includes its own `LICENSE` file, and the repository-wide historical notice remains in the root `License` file.

@@ -16,6 +16,8 @@ This rewrite builds on the original Polygen project created by Alvise Spano and 
 - Original website: <https://polygen.org>
 - Original repository: <https://github.com/alvisespano/Polygen>
 
+The original project is licensed under the GNU General Public License, version 2 or later. The TypeScript rewrite in this repository preserves that licensing direction as GPL-2.0-or-later.
+
 ## Repository Layout
 
 ```text
@@ -39,6 +41,7 @@ Current scope:
 - preserve deterministic seeding when requested
 - default to entropy-backed randomness when no seed is provided
 - expose resolved seeds so unseeded runs can be replayed later
+- expose an opt-in compatibility policy for warning-backed compile fallbacks
 - provide a docs site in English using Nuxt 4 and Nuxt Content
 
 Intentionally not in first-release scope:
@@ -90,6 +93,10 @@ const grammar =
 
 const text = polygen(grammar);
 const replayable = polygenWithInfo(grammar);
+
+const migrated = polygenWithInfo("S ::= Hello;", {
+  compilePolicy: { preset: "compat" },
+});
 ```
 
 Segment helper:
@@ -132,6 +139,8 @@ Still intentionally deferred:
 - the full OCaml warning model parity and warning-reporting surface
 - exact parity classification for every historical grammar feature
 
+The current opt-in compatibility policy is intentionally narrow. Today it only softens two compile-time cases: undefined simple non-terminals in atom position and invalid explicit label selection, both as warnings with fallbacks.
+
 ## Legacy Materials
 
 The repository root still contains the original sources and historical assets.
@@ -141,3 +150,10 @@ The repository root still contains the original sources and historical assets.
 - `grammars/` contains the historical grammar collection
 
 Those files remain important reference material for parity work, but the ongoing npm-focused implementation lives in `typescript/`.
+
+## License
+
+This repository follows the original project's GNU General Public License terms, version 2 or later.
+
+- Canonical repository notice: `License`
+- TypeScript package SPDX identifier: `GPL-2.0-or-later`

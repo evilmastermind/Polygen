@@ -105,13 +105,59 @@ describe("polygen", () => {
   it("supports explicit label selection", () => {
     const grammar = readFixture("labels-selection.grm");
 
-    expect(["Good day", "Hi"].includes(polygen(grammar))).toBe(true);
+    expect(["Good day", "Hi", "Hello"].includes(polygen(grammar))).toBe(true);
   });
 
   it("throws for malformed explicit label selection", () => {
     expect(() =>
       polygen('S ::= Greeting.missing; Greeting ::= formal: "Good day" | "Hi";')
     ).toThrow(CompileError);
+  });
+
+  it("can treat undefined non-terminals as terminal text in compatibility mode", () => {
+    const result = polygenWithInfo("S ::= Hello;", {
+      compilePolicy: {
+        preset: "compat"
+      }
+    });
+
+    expect(result.text).toBe("Hello");
+    expect(result.warnings).toEqual([
+      expect.objectContaining({
+        code: "undefined-nonterminal-fallback",
+        severity: "warning"
+      })
+    ]);
+  });
+
+  it("can ignore invalid explicit label selection in compatibility mode", () => {
+    const result = polygenWithInfo(
+      'S ::= Greeting.missing; Greeting ::= formal: "Good day" | "Hi";',
+      {
+        compilePolicy: {
+          preset: "compat"
+        },
+        seed: 0
+      }
+    );
+
+    expect(["Good day", "Hi"]).toContain(result.text);
+    expect(result.warnings).toEqual([
+      expect.objectContaining({
+        code: "invalid-label-selection-fallback",
+        severity: "warning"
+      })
+    ]);
+  });
+
+  it("keeps declaration heads strict in compatibility mode", () => {
+    expect(() =>
+      polygen("hello ::= world;", {
+        compilePolicy: {
+          preset: "compat"
+        }
+      })
+    ).toThrow(ParserError);
   });
 
   it("surfaces a warning when unfolding an assignment-bound symbol", () => {
