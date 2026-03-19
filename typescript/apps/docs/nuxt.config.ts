@@ -1,23 +1,84 @@
 import { defineNuxtConfig } from "nuxt/config";
 
-const isDev = process.env.NODE_ENV !== "production";
-
-const nuxtConfig: ReturnType<typeof defineNuxtConfig> = defineNuxtConfig({
+export default defineNuxtConfig({
   compatibilityDate: "2026-03-16",
-  // @ts-expect-error Nuxt Content augments Nuxt config at runtime, but the editor type here does not pick it up.
-  content: {
-    experimental: {
-      sqliteConnector: isDev ? "native" : "better-sqlite3"
-    },
-    database: {
-      type: "sqlite",
-      filename: isDev ? "./.nuxt/content.db" : ":memory:"
+  modules: ["@nuxt/ui", "@nuxt/content", "@nuxtjs/robots"],
+  routeRules: {
+    "/": { prerender: true },
+    "/docs": { redirect: "/docs/getting-started" }
+  },
+  site: {
+    name: "Polygen",
+    url: "https://polygen.org"
+  },
+  nitro: {
+    prerender: {
+      crawlLinks: true,
+      failOnError: false,
+      autoSubfolderIndex: false
     }
   },
-  devtools: {
-    enabled: true
+  content: {
+    experimental: { sqliteConnector: "native" },
+    build: {
+      markdown: {
+        highlight: {
+          langs: [
+            "bash",
+            "diff",
+            "json",
+            "js",
+            "ts",
+            "html",
+            "css",
+            "vue",
+            "shell",
+            "mdc",
+            "md",
+            "yaml"
+          ]
+        },
+        remarkPlugins: {
+          "remark-mdc": {
+            options: {
+              autoUnwrap: true
+            }
+          }
+        }
+      }
+    }
   },
-  modules: ["@nuxt/content"]
+  mdc: {
+    highlight: {
+      shikiEngine: "javascript"
+    }
+  },
+  css: ["~/assets/css/main.css"],
+  icon: {
+    clientBundle: {
+      scan: true
+    },
+    provider: "iconify"
+  },
+  robots: {
+    groups: [
+      {
+        userAgent: "*",
+        allow: "/"
+      }
+    ],
+    sitemap: "/sitemap.xml"
+  },
+  runtimeConfig: {
+    public: {
+      locale: "en",
+      version: "0.1.0"
+    }
+  },
+  typescript: {
+    strict: false
+  },
+  devtools: {
+    enabled: false
+  }
 });
-
-export default nuxtConfig;

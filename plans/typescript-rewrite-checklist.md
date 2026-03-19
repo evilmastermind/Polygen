@@ -59,7 +59,7 @@ This checklist is the operational source of truth for the rewrite. Keep it updat
 - [x] Inventory preprocessing behavior from `src/pre.ml`.
 - [x] Inventory semantic checks from `src/check.ml`.
 - [x] Inventory generation behavior from `src/gen.ml`.
-- [ ] Inventory user-facing language semantics from `docs/polygen-spec_EN.html`.
+- [x] Inventory user-facing language semantics from `docs/polygen-spec_EN.html`.
 - [ ] Cross-check unclear parts against `docs/polygen-spec_IT.html`.
 - [x] Write a parity notes document inside the project.
 - [x] Classify features into exact parity, intentional changes, and deferred work.
@@ -275,3 +275,4 @@ Update this section briefly at the end of each session.
 - [x] Re-verified the warnings release after implementation: 44 package tests passed, docs build passed, and both consumer/browser smoke tests still passed.
 - [x] Documented the first compatibility-policy implementation across quick start, API, troubleshooting, compatibility status, and public readmes so the new warning-backed fallbacks are discoverable.
 - [x] Aligned the TypeScript rewrite's public licensing story with the original project: package metadata now uses `GPL-2.0-or-later`, the package carries its own `LICENSE` file, and the repo/docs/readmes now mention the GPL license explicitly.
+- [x] Audited the historical English spec against the TypeScript implementation and current docs, then recorded a feature-by-feature coverage matrix in `plans/legacy-spec-coverage-audit.md`.

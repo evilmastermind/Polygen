@@ -101,5 +101,5 @@ The TypeScript package will also support standalone grammar segments.
 
 1. Import declarations are parsed but intentionally unsupported in compilation.
 2. The warning model from the OCaml checker is only partially surfaced so far.
-3. Full feature-by-feature parity against the historical HTML specification is still incomplete.
+3. Full feature-by-feature parity against the historical HTML specification is still incomplete; see `plans/legacy-spec-coverage-audit.md` for the current implementation/docs matrix.
 4. Exact parity classification for every generator semantic corner case is still ongoing.
