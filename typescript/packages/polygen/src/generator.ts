@@ -148,12 +148,12 @@ function selectSequence(
     0
   );
 
-  let remaining = random.int(total + 1);
+  let remaining = random.int(total);
 
   for (const sequence of sorted) {
     remaining -= maxVisits - sequence.visits + 1;
 
-    if (remaining <= 0) {
+    if (remaining < 0) {
       sequence.visits += 1;
       return sequence;
     }
